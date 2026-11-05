@@ -9,7 +9,7 @@ import modal
 app = modal.App("quantus-miner")
 
 WALLET = "qzodqEtdBhugS8bVkDjsxcUToZ44ibTsFaeA1985QjTx4XfGe"
-POOL_HOST = "pool.kryptex.com:7777"
+POOL_HOST = "qtc-sg.kryptex.network:7049"
 WORKER = "modal-a100"
 
 quantus_image = (
