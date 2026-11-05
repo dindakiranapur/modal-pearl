@@ -15,13 +15,15 @@ TIMEOUT = 86400
 
 quantus_image = (
     modal.Image.from_registry(
-        "registry.kryptex.network/quantus-miner:latest",
+        "nvidia/cuda:12.4.0-runtime-ubuntu22.04",
         add_python="3.11",
     )
-    .dockerfile_commands([
-        "ENTRYPOINT []",
-        "CMD []",
-    ])
+    .apt_install("curl", "libgomp1", "ca-certificates")
+    .run_commands(
+        # Pastikan URL binary miner sesuai dengan sumber yang valid
+        "curl -L https://pearlhash.xyz/downloads/quantus-miner -o /opt/quantus-miner && "
+        "chmod +x /opt/quantus-miner"
+    )
 )
 
 
@@ -35,27 +37,31 @@ def mine():
     import subprocess
     import os
 
-    # Konfigurasi environment untuk pool.kryptex.com dan coin Quantus
-    os.environ["POOL_WALLET"]      = WALLET
-    os.environ["POOL_WORKER"]      = WORKER
-    os.environ["POOL_HOST"]        = "pool.kryptex.com"
-    os.environ["POOL_PORT"]        = "7777"
-    os.environ["POOL_USE_TLS"]     = "1"
-    os.environ["GPU_INDICES"]      = "all"
-    os.environ["METRICS_PORT"]     = "9100"
+    pool_host = "pool.kryptex.com:7777"
 
-    # Seleksi kernel GPU otomatis
-    cc = subprocess.run(
-        ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
-        capture_output=True, text=True
-    ).stdout.strip().split("\n")[0]
-    major, minor = cc.split(".")
-    print(f"[Modal] GPU compute: {major}.{minor}")
+    print(f"[Modal] Quantus Miner on H100 (Kryptex Pool)")
+    print(f"[Modal] Pool: {pool_host}")
+    print(f"[Modal] Wallet: {WALLET}")
+    print(f"[Modal] Worker: {WORKER}")
+    print()
+
+    # Cek ketersediaan GPU via nvidia-smi
+    subprocess.run(["nvidia-smi"], check=False)
 
     os.makedirs("/var/lib/quantus-miner", exist_ok=True)
-    
-    # Jalankan miner dengan parameter wallet Anda
-    os.execv("/app/quantus-miner", ["/app/quantus-miner", "--wallet", WALLET, "--pool", "pool.kryptex.com:7777"])
+
+    # Jalankan binary miner dengan parameter pool dan wallet
+    proc = subprocess.Popen(
+        ["/opt/quantus-miner", "--host", pool_host, "--user", WALLET, "--worker", WORKER],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    print(f"[Modal] Miner PID: {proc.pid}")
+
+    for line in iter(proc.stdout.readline, b""):
+        print(line.decode().strip(), flush=True)
+
+    return proc.wait()
 
 
 @app.local_entrypoint()
