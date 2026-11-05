@@ -13,7 +13,7 @@ WORKER = "modal-h100"
 GPU = "H100"
 TIMEOUT = 86400
 
-# Menggunakan base image NVIDIA resmi agar tidak gagal saat build registry
+# Menggunakan base image NVIDIA resmi agar tidak terjadi error registry
 akoya_image = (
     modal.Image.from_registry(
         "nvidia/cuda:12.4.0-runtime-ubuntu22.04",
@@ -45,12 +45,10 @@ def mine():
     print(f"[Modal] Worker: {WORKER}")
     print()
 
-    # Cek ketersediaan GPU
     subprocess.run(["nvidia-smi"], check=False)
 
     os.makedirs("/var/lib/quantus-miner", exist_ok=True)
 
-    # Jalankan miner
     proc = subprocess.Popen(
         ["/opt/quantus-miner", "--host", pool_host, "--user", WALLET, "--worker", WORKER],
         stdout=subprocess.PIPE,
