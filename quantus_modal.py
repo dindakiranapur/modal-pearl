@@ -37,7 +37,7 @@ def mine():
     import subprocess
     import os
 
-    pool_host = "pool.kryptex.com:7777"
+    pool_host = "qtc-sg.kryptex.network:7049"
 
     print(f"[Modal] Quantus Miner on H100 (Kryptex Pool)")
     print(f"[Modal] Pool: {pool_host}")
